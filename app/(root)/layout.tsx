@@ -1,7 +1,7 @@
 import MobileNav from '@/components/ui/MobileNav';
 import Sidebar from '@/components/ui/Sidebar';
-import { sidebarLinks } from '@/constants'; // Ensure this exists
-import { cn } from '@/lib/utils';          // Ensure this utility is available
+
+
 import Image from "next/image";
 
 
