@@ -6,38 +6,38 @@ import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 
 const formSchema = authFormSchema('sign-up'); // Define schema outside for reuse
-
-interface CustomInputProps {
-  control: Control<z.infer<typeof formSchema>>; // Use type inference from Zod schema
-  name: FieldPath<z.infer<typeof formSchema>>; // Ensure the name matches schema fields
-  label: string; // Label for the input
-  placeholder: string; // Placeholder text for the input
+interface CustomInput {
+  control: Control<z.infer<typeof formSchema>>,
+  name: FieldPath<z.infer<typeof formSchema>>,
+  label: string,
+  placeholder: string
 }
 
-const CustomInput = ({ control, name, label, placeholder }: CustomInputProps) => {
+const CustomInput = ({ control, name, label, placeholder }: CustomInput) => {
   return (
     <FormField
       control={control}
       name={name}
       render={({ field }) => (
         <div className="form-item">
-          <FormLabel className="form-label">{label}</FormLabel>
-          <div className="flex w-full">
+          <FormLabel className="form-label">
+            {label}
+          </FormLabel>
+          <div className="flex w-full flex-col">
             <FormControl>
-            <Input
-              placeholder={placeholder}
-              className="input-class"
-              value={field.value || ""} // Fallback to an empty string
-              onChange={field.onChange} // Ensure it updates
-              type={name === 'password' ? 'password' : 'text'}
-            />
+              <Input 
+                placeholder={placeholder}
+                className="input-class"
+                type={name === 'password' ? 'password' : 'text'}
+                {...field}
+              />
             </FormControl>
             <FormMessage className="form-message mt-2" />
           </div>
         </div>
       )}
     />
-  );
-};
+  )
+}
 
-export default CustomInput;
+export default CustomInput

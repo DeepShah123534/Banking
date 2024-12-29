@@ -1,16 +1,19 @@
-// src/lib/server/appwrite.js
 "use server";
+
 import { Client, Account, Databases, Users } from "node-appwrite";
 import { cookies } from "next/headers";
+import { redirect } from "next/dist/client/components/redirect";
 
 export async function createSessionClient() {
   const client = new Client()
     .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
     .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT!);
 
-  const session = await (await cookies()).get("appwrite-session");
+  const session =  (await cookies()).get("appwrite-session");
+
   if (!session || !session.value) {
-    throw new Error("No session");
+    console.error("Session cookie not found:", session);
+    redirect('/sign-in');
   }
 
   client.setSession(session.value);
@@ -33,11 +36,10 @@ export async function createAdminClient() {
       return new Account(client);
     },
     get database() {
-        return new Databases(client)
-    } ,
+      return new Databases(client);
+    },
     get user() {
-        return new Users(client)
-    } ,
-
+      return new Users(client);
+    }
   };
 }
