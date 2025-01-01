@@ -1,6 +1,6 @@
 'use server';
 
-import { ID } from "node-appwrite";
+import { ID, Query } from "node-appwrite";
 import { createAdminClient, createSessionClient } from "../appwrite";
 import { cookies } from "next/headers";
 import { encryptId, extractCustomerIdFromUrl, parseStringify } from "../utils";
@@ -16,13 +16,42 @@ const {
   APPWRITE_BANK_COLLECTION_ID: BANK_COLLECTION_ID,
 } = process.env;
 
+export const getUserInfo = async ({ userId }: { userId: string }) => {
+  try {
+    const { database } = await createAdminClient();
+
+    const documents = await database.listDocuments(
+      DATABASE_ID!,
+      USER_COLLECTION_ID!,
+      [Query.equal("UseriD", [userId])] // Ensure "UseriD" matches your collection schema
+    );
+
+    if (!documents.documents.length) {
+      throw new Error("User not found");
+    }
+
+    return parseStringify(documents.documents[0]); // Use documents, not user
+  } catch (error) {
+    console.error("Error in getUserInfo:", error);
+    throw error;
+  }
+};
+
 export const signIn = async ({ email, password }: signInProps) => {
   try {
     const { account } = await createAdminClient();
+    const session = await account.createEmailPasswordSession(email, password);
 
-    const response = await account.createEmailPasswordSession(email, password);
+    (await cookies()).set("appwrite-session", session.secret, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "strict",
+      
+    });
 
-    return parseStringify(response);
+    const user = await getUserInfo({ userId: session.userId })
+
+    return parseStringify(user);
   } catch (error) {
     console.error('Error', error);
   }
@@ -85,11 +114,13 @@ export async function getLoggedInUser() {
   try {
     const { account } = await createSessionClient();
 
-    const user = await account.get();
+    const result = await account.get(); // Get the current logged-in user
 
-    return parseStringify(user);
+    const user = await getUserInfo({ userId: result.$id }); // Pass `userId`
+
+    return parseStringify(user); // Ensure the user object is serialized properly
   } catch (error) {
-    console.log(error)
+    console.error("Error in getLoggedInUser:", error);
     return null;
   }
 }
@@ -216,5 +247,56 @@ export const exchangePublicToken = async ({
     });
   } catch (error) {
     console.error("An error occurred while creating exchanging token:", error);
+  }
+}
+
+export const getBanks = async ({ userId } : getBanksProps) => {
+   try{
+    const {database} = await createAdminClient();
+
+    const banks = await database.listDocuments(
+      DATABASE_ID!,
+      BANK_COLLECTION_ID!,
+      [Query.equal('userId', [userId])]
+    )
+    return parseStringify(banks.documents)
+   }
+   catch (error){
+    console.log(error)
+   }
+}
+
+export const getBank = async ({ documentId } : getBankProps) => {
+  try{
+   const {database} = await createAdminClient();
+
+   const bank = await database.listDocuments(
+     DATABASE_ID!,
+     BANK_COLLECTION_ID!,
+     [Query.equal('$id', [documentId])]
+   )
+   return parseStringify(bank.documents[0])
+  }
+  catch (error){
+   console.log(error)
+  }
+}
+
+
+export const getBankByAccountId = async ({ accounId } : getBankByAccountIdProps) => {
+  try{
+   const {database} = await createAdminClient();
+
+   const bank = await database.listDocuments(
+     DATABASE_ID!,
+     BANK_COLLECTION_ID!,
+     [Query.equal('accounId', [accounId])]
+   )
+   if (bank.total !== 1) return null;
+
+   return parseStringify(bank.documents[0])
+  }
+  catch (error){
+   console.log(error)
   }
 }
